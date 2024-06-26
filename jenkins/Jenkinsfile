@@ -2,56 +2,55 @@ pipeline {
     agent any
 
     environment {
-        TOMCAT_CREDENTIALS = credentials('tomcatcred') // Replace with your credentials ID
+        TOMCAT_CREDENTIALS = credentials('tomcatcred') // Replace with your credentials ID for Tomcat deployment
     }
 
     tools {
-        // Define Maven tool with the name configured in Jenkins
+        // Use the Maven tool named 'Maven 3.9.8' configured in Jenkins
         maven 'Maven 3.9.8'
     }
 
     stages {
         stage("Checkout code") {
             steps {
-                // Checkout code from Git
+                // Checkout code from Git repository
                 checkout scm
             }
         }
 
         stage("Build") {
             steps {
-                // Build the Maven project
+                // Build the Maven project, skipping tests
                 sh "mvn clean install -Dmaven.test.skip=true"
             }
         }
 
         stage("Archive Artifact") {
             steps {
-                // Archive the built artifact
+                // Archive the built WAR artifact
                 archiveArtifacts artifacts: 'target/*.war'
             }
         }
 
         stage("Deployment") {
             steps {
-                // Deploy the artifact to Tomcat
+                // Deploy the WAR artifact to Tomcat using 'tomcat9' plugin
                 script {
                     def tomcatUrl = 'http://3.111.217.149:8080/'
                     def credentialsId = 'tomcatcred'
                     def warFile = findFiles(glob: 'target/*.war')[0].name
 
-                    // Use 'tomcat9' plugin for deployment
-                    tomcat9 credentialsId: credentialsId,
-                           url: tomcatUrl,
-                           path: '/app', // Tomcat context path
-                           war: warFile
+                    tomcat9(credentialsId: credentialsId,
+                            url: tomcatUrl,
+                            path: '/app', // Tomcat context path where the application will be deployed
+                            war: warFile)
                 }
             }
         }
 
         stage("Notification") {
             steps {
-                // Send notification email
+                // Send notification email on job completion
                 emailext subject: "Job Completed",
                          body: "Jenkins pipeline job for Maven build completed successfully.",
                          to: "simbathecat657@gmail.com"
