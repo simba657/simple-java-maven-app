@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        TOMCAT_CREDENTIALS = credentials('tomcatcred') // Replace with your credentials ID
+    }
+
     stages {
         stage("Checkout code") {
             steps {
@@ -10,7 +14,7 @@ pipeline {
 
         stage("Build") {
             steps {
-                bat "mvn clean install -Dmaven.test.skip=true"
+                sh "mvn clean install -Dmaven.test.skip=true"
             }
         }
 
@@ -24,10 +28,10 @@ pipeline {
             steps {
                 script {
                     def tomcatUrl = 'http://3.111.217.149:8080/'
-                    def credentialsId = 'tomcatCreds'
-                    def warFile = bat(returnStdout: true, script: 'dir /s /b target\\*.war').trim()
+                    def credentialsId = 'tomcatCred'
+                    def warFile = findFiles(glob: 'target/*.war')[0].name
 
-                    deploy adapters: [tomcat9(url: tomcatUrl, credentialsId: credentialsId)],
+                    deploy adapters: [tomcat9(credentialsId: credentialsId, url: tomcatUrl)],
                            war: warFile,
                            contextPath: 'app'
                 }
