@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        TOMCAT_CREDENTIALS = credentials('tomcat-tomcat') // Replace 'tomcat-credentials-id' with your credentials ID
+        TOMCAT_CREDENTIALS = credentials('tomcat-tomcat') // Ensure this matches your credentials ID in Jenkins
     }
 
     stages {
@@ -20,8 +20,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    def warFile = 'target/your-app.war' // Replace with the path to your WAR file
-                    deploy adapters: [tomcat9(credentialsId: 'tomcat-credentials-id', path: '', url: 'http://http://3.111.217.149:8080/manager/html')], contextPath: '/your-app', war: warFile
+                    def warFile = 'target/simple-java-maven-app-1.0-SNAPSHOT.war' // Ensure this matches the path to your WAR file
+                    deploy adapters: [tomcat9(credentialsId: 'tomcat-tomcat', path: '', url: 'http://3.111.217.149:8080/manager/text')], contextPath: '/simple-java-maven-app', war: warFile
                 }
             }
         }
