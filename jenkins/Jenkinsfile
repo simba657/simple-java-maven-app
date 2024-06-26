@@ -6,11 +6,18 @@ pipeline {
     }
 
     tools {
-        // Use the Maven tool named 'Maven 3.9.8' configured in Jenkins
-        maven 'maven'
+        // Use the Maven tool configured in Jenkins
+        maven 'Maven 3.9.8'
     }
 
     stages {
+        stage("Prepare Environment") {
+            steps {
+                // Clean the workspace before starting the build
+                cleanWs()
+            }
+        }
+
         stage("Checkout code") {
             steps {
                 // Checkout code from Git repository
@@ -21,7 +28,11 @@ pipeline {
         stage("Build") {
             steps {
                 // Build the Maven project, skipping tests
-                sh "mvn clean install -Dmaven.test.skip=true"
+                script {
+                    retry(3) {
+                        sh "mvn clean install -Dmaven.test.skip=true"
+                    }
+                }
             }
         }
 
@@ -40,10 +51,10 @@ pipeline {
                     def credentialsId = 'tomcatcred'
                     def warFile = findFiles(glob: 'target/*.war')[0].name
 
-                    tomcat9(credentialsId: credentialsId,
+                    tomcat9 credentialsId: credentialsId,
                             url: tomcatUrl,
                             path: '/app', // Tomcat context path where the application will be deployed
-                            war: warFile)
+                            war: warFile
                 }
             }
         }
@@ -64,6 +75,10 @@ pipeline {
         }
         failure {
             echo 'CI/CD Pipeline job failed.'
+            // Optional: Send failure notification
+            emailext subject: "Job Failed",
+                     body: "Jenkins pipeline job for Maven build failed.",
+                     to: "simbathecat657@gmail.com"
         }
     }
 }
