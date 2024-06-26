@@ -1,30 +1,38 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.0'
-            args '-v /root/.m2:/root/.m2'
-        }
+    agent any
+
+    environment {
+        TOMCAT_CREDENTIALS = credentials('tomcat-tomcat') // Replace 'tomcat-credentials-id' with your credentials ID
     }
+
     stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/simba657/simple-java-maven-app.git', branch: 'main' // Replace with your Git repository URL
+            }
+        }
         stage('Build') {
             steps {
-                sh 'mvn -B -DskipTests clean package'
+                // Assuming you're using Maven for build
+                sh 'mvn clean package'
             }
         }
-        stage('Test') {
+        stage('Deploy') {
             steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
+                script {
+                    def warFile = 'target/your-app.war' // Replace with the path to your WAR file
+                    deploy adapters: [tomcat9(credentialsId: 'tomcat-credentials-id', path: '', url: 'http://http://3.111.217.149:8080/manager/html')], contextPath: '/your-app', war: warFile
                 }
             }
         }
-        stage('Deliver') {
-            steps {
-                sh './jenkins/scripts/deliver.sh'
-            }
+    }
+
+    post {
+        success {
+            echo 'CI/CD Pipeline job successfully built and deployed the application on the server.'
+        }
+        failure {
+            echo 'CI/CD Pipeline job failed.'
         }
     }
 }
