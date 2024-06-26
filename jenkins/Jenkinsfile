@@ -1,50 +1,57 @@
 pipeline {
     agent any
 
-     tools {
-        // Define Maven tool with the name configured in Jenkins
-        maven 'Maven 3.9.8'
-    }
-
     environment {
         TOMCAT_CREDENTIALS = credentials('tomcatcred') // Replace with your credentials ID
+    }
+
+    tools {
+        // Define Maven tool with the name configured in Jenkins
+        maven 'Maven 3.9.8'
     }
 
     stages {
         stage("Checkout code") {
             steps {
+                // Checkout code from Git
                 checkout scm
             }
         }
 
         stage("Build") {
             steps {
+                // Build the Maven project
                 sh "mvn clean install -Dmaven.test.skip=true"
             }
         }
 
         stage("Archive Artifact") {
             steps {
-                archiveArtifacts artifacts: "target/*.war"
+                // Archive the built artifact
+                archiveArtifacts artifacts: 'target/*.war'
             }
         }
 
         stage("Deployment") {
             steps {
+                // Deploy the artifact to Tomcat
                 script {
                     def tomcatUrl = 'http://3.111.217.149:8080/'
                     def credentialsId = 'tomcatcred'
                     def warFile = findFiles(glob: 'target/*.war')[0].name
 
-                    deploy adapters: [tomcat9(credentialsId: credentialsId, url: tomcatUrl)],
-                           war: warFile,
-                           contextPath: 'app'
+                    // Use 'tomcat9' plugin for deployment
+                    tomcat9 credentialsId: credentialsId,
+                           url: tomcatUrl,
+                           path: '/app', // Tomcat context path
+                           war: warFile
                 }
             }
         }
 
         stage("Notification") {
             steps {
+                // Send notification email
                 emailext subject: "Job Completed",
                          body: "Jenkins pipeline job for Maven build completed successfully.",
                          to: "simbathecat657@gmail.com"
