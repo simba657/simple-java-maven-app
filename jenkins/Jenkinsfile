@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     def tomcatUrl = 'http://3.111.217.149:8080/'
-                    def credentialsId = 'tomcatCred'
+                    def credentialsId = 'tomcatcred'
                     def warFile = findFiles(glob: 'target/*.war')[0].name
 
                     deploy adapters: [tomcat9(credentialsId: credentialsId, url: tomcatUrl)],
