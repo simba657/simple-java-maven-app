@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+     tools {
+        // Define Maven tool with the name configured in Jenkins
+        maven 'Maven 3.9.8'
+    }
+
     environment {
         TOMCAT_CREDENTIALS = credentials('tomcatcred') // Replace with your credentials ID
     }
