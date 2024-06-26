@@ -1,38 +1,42 @@
-pipeline {
+pipeline { 
     agent any
 
-    environment {
-        TOMCAT_CREDENTIALS = credentials('tomcat-tomcat') // Ensure this matches your credentials ID in Jenkins
+    stages{ 
+            stage("checkout code"){
+                steps{
+                       checkout scm}
+            }
+
+    stage("Build"){
+          steps{
+               bat "mvn clean install -Dmaven.test.skip=true"
+          }
+
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git url: 'https://github.com/simba657/simple-java-maven-app.git', branch: 'main' // Replace with your Git repository URL
-            }
-        }
-        stage('Build') {
-            steps {
-                // Assuming you're using Maven for build
-                sh 'mvn clean package'
-            }
-        }
-        stage('Deploy') {
-            steps {
-                script {
-                    def warFile = 'target/simple-java-maven-app-1.0-SNAPSHOT.war' // Ensure this matches the path to your WAR file
-                    deploy adapters: [tomcat9(credentialsId: 'tomcat-tomcat', path: '', url: 'http://3.111.217.149:8080/manager/text')], contextPath: '/simple-java-maven-app', war: warFile
-                }
-            }
+    stage("Archive Artifact"){
+        steps{
+        archiveArtifacts artifacts:"target/*.war"
         }
     }
 
-    post {
-        success {
-            echo 'CI/CD Pipeline job successfully built and deployed the application on the server.'
+     stage("deployment"){
+         steps{
+
+        deploy adapters: [tomcat9(url: http://3.111.217.149:8080/',
+                                  credentialsId: "TomcatCreds")],
+            war: "target/*.war",
+            contextPath: "app"
+
+         }
+
+     }
+        stage("Notification"){
+            steps{
+                emailext(
+                    subject: "Job Completed",
+                    body: "Jenkins pipeline job for maven  build job completed",
+                    to: "simbathecat657@gmail.com"
+                    )
+            }
         }
-        failure {
-            echo 'CI/CD Pipeline job failed.'
-        }
-    }
-}
