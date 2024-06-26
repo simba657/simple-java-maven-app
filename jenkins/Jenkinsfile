@@ -1,42 +1,54 @@
-pipeline { 
+pipeline {
     agent any
 
-    stages{ 
-            stage("checkout code"){
-                steps{
-                       checkout scm}
+    stages {
+        stage("Checkout code") {
+            steps {
+                checkout scm
             }
+        }
 
-    stage("Build"){
-          steps{
-               bat "mvn clean install -Dmaven.test.skip=true"
-          }
+        stage("Build") {
+            steps {
+                bat "mvn clean install -Dmaven.test.skip=true"
+            }
+        }
 
-    }
+        stage("Archive Artifact") {
+            steps {
+                archiveArtifacts artifacts: "target/*.war"
+            }
+        }
 
-    stage("Archive Artifact"){
-        steps{
-        archiveArtifacts artifacts:"target/*.war"
+        stage("Deployment") {
+            steps {
+                script {
+                    def tomcatUrl = 'http://3.111.217.149:8080/'
+                    def credentialsId = 'tomcatCreds'
+                    def warFile = bat(returnStdout: true, script: 'dir /s /b target\\*.war').trim()
+
+                    deploy adapters: [tomcat9(url: tomcatUrl, credentialsId: credentialsId)],
+                           war: warFile,
+                           contextPath: 'app'
+                }
+            }
+        }
+
+        stage("Notification") {
+            steps {
+                emailext subject: "Job Completed",
+                         body: "Jenkins pipeline job for Maven build completed successfully.",
+                         to: "simbathecat657@gmail.com"
+            }
         }
     }
 
-     stage("deployment"){
-         steps{
-
-        deploy adapters: [tomcat9(url: http://3.111.217.149:8080/',
-                                  credentialsId: "TomcatCreds")],
-            war: "target/*.war",
-            contextPath: "app"
-
-         }
-
-     }
-        stage("Notification"){
-            steps{
-                emailext(
-                    subject: "Job Completed",
-                    body: "Jenkins pipeline job for maven  build job completed",
-                    to: "simbathecat657@gmail.com"
-                    )
-            }
+    post {
+        success {
+            echo 'CI/CD Pipeline job successfully built, deployed, and notified.'
         }
+        failure {
+            echo 'CI/CD Pipeline job failed.'
+        }
+    }
+}
